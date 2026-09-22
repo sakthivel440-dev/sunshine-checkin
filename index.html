@@ -2,8 +2,7 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <title>Sunshine School - QR Check-In</title>
+  <title>Sunshine School Check-In</title>
 
   <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -24,29 +23,9 @@
       box-shadow: 0 2px 10px rgba(0,0,0,0.15);
     }
 
-    h1 {
-      font-size: 30px;
-    }
-
-    button {
-      width: 100%;
-      padding: 18px;
-      font-size: 20px;
-      border: none;
-      border-radius: 10px;
-      background: #4f46e5;
-      color: white;
-      margin-top: 20px;
-    }
-
     #reader {
       width: 100%;
       margin-top: 20px;
-    }
-
-    #message {
-      margin-top: 15px;
-      font-size: 17px;
     }
   </style>
 </head>
@@ -59,147 +38,58 @@
 
   <h2>Event Check-In</h2>
 
-  <p>Scan the parent's QR code</p>
-
-  <button onclick="startScanner()">
-    📷 SCAN QR CODE
-  </button>
+  <p>Point the camera at the parent's QR code</p>
 
   <div id="reader"></div>
-
-  <div id="message"></div>
 
 </div>
 
 <script>
 
-let scanner = null;
+function onScanSuccess(decodedText, decodedResult) {
 
-function startScanner() {
+  console.log("QR FOUND:", decodedText);
 
-  document.getElementById("message").innerHTML =
-    "📷 Opening camera...";
+  if (decodedText.indexOf("?id=") !== -1) {
 
-  document.getElementById("reader").innerHTML = "";
+    var id = decodedText.split("?id=")[1];
 
-  scanner = new Html5Qrcode("reader");
-
-  scanner.start(
-    { facingMode: "environment" },
-
-    {
-      fps: 10,
-      qrbox: {
-        width: 280,
-        height: 280
-      }
-    },
-
-    function(decodedText) {
-
-      console.log("QR FOUND:", decodedText);
-
-      document.getElementById("message").innerHTML =
-        "✅ QR FOUND<br>Opening student record...";
-
-      scanner.stop().then(function() {
-
-        openStudent(decodedText);
-
-      }).catch(function() {
-
-        openStudent(decodedText);
-
-      });
-
-    },
-
-    function(errorMessage) {
-      // Keep scanning
+    if (id.indexOf("&") !== -1) {
+      id = id.split("&")[0];
     }
 
-  ).catch(function(error) {
-
-    console.log(error);
-
-    document.getElementById("message").innerHTML =
-      "❌ Camera could not open.<br>" +
-      "Please allow camera access.";
-  });
-
-}
-
-
-function openStudent(qrData) {
-
-  qrData = qrData.trim();
-
-  console.log("QR DATA:", qrData);
-
-  var registrationID = "";
-
-  // If QR contains the Apps Script URL
-  if (qrData.indexOf("?id=") !== -1) {
-
-    registrationID = qrData.split("?id=")[1];
-
-    if (registrationID.indexOf("&") !== -1) {
-      registrationID = registrationID.split("&")[0];
-    }
+    window.location.href =
+      "https://script.google.com/macros/s/AKfycbysbvpdWgaQbEsWrvIvfQx9gleIth8jh0ORiXVZsBv36SZpAJSqC8Aj3H3Rst63irxV0w/exec?id=" +
+      encodeURIComponent(id);
 
   } else {
 
-    // If QR contains only the Registration ID
-    registrationID = qrData;
+    window.location.href =
+      "https://script.google.com/macros/s/AKfycbysbvpdWgaQbEsWrvIvfQx9gleIth8jh0ORiXVZsBv36SZpAJSqC8Aj3H3Rst63irxV0w/exec?id=" +
+      encodeURIComponent(decodedText);
 
-  }
-
-  try {
-    registrationID = decodeURIComponent(registrationID);
-  } catch (e) {
-  }
-
-  registrationID = registrationID.trim();
-
-  if (!registrationID) {
-
-    document.getElementById("message").innerHTML =
-      "❌ Registration ID not found";
-
-    return;
-  }
-
-  document.getElementById("message").innerHTML =
-    "✅ QR FOUND<br>" +
-    "Registration: " + registrationID +
-    "<br>Opening student record...";
-
-  var checkInURL =
-    "https://script.google.com/macros/s/AKfycbysbvpdWgaQbEsWrvIvfQx9gleIth8jh0ORiXVZsBv36SZpAJSqC8Aj3H3Rst63irxV0w/exec?id=" +
-    encodeURIComponent(registrationID);
-
-  window.location.href = checkInURL;
-}
-
-  /*
-    The QR already contains your Apps Script URL:
-
-    https://script.google.com/macros/s/...../exec?id=CANVAS-2026-0001
-
-    So we simply open that URL.
-  */
-
-  if (qrData.indexOf("http") === 0) {
-
-    window.location.href = qrData;
-
-  } else {
-
-    document.getElementById("message").innerHTML =
-      "❌ Invalid QR code";
   }
 
 }
+
+function onScanFailure(error) {
+  // Keep scanning
+}
+
+var scanner = new Html5QrcodeScanner(
+  "reader",
+  {
+    fps: 10,
+    qrbox: {
+      width: 250,
+      height: 250
+    },
+    rememberLastUsedCamera: true
+  },
+  false
+);
+
+scanner.render(onScanSuccess, onScanFailure);
 
 </script>
 
