@@ -132,6 +132,55 @@ function startScanner() {
 
 function openStudent(qrData) {
 
+  qrData = qrData.trim();
+
+  console.log("QR DATA:", qrData);
+
+  var registrationID = "";
+
+  // If QR contains the Apps Script URL
+  if (qrData.indexOf("?id=") !== -1) {
+
+    registrationID = qrData.split("?id=")[1];
+
+    if (registrationID.indexOf("&") !== -1) {
+      registrationID = registrationID.split("&")[0];
+    }
+
+  } else {
+
+    // If QR contains only the Registration ID
+    registrationID = qrData;
+
+  }
+
+  try {
+    registrationID = decodeURIComponent(registrationID);
+  } catch (e) {
+  }
+
+  registrationID = registrationID.trim();
+
+  if (!registrationID) {
+
+    document.getElementById("message").innerHTML =
+      "❌ Registration ID not found";
+
+    return;
+  }
+
+  document.getElementById("message").innerHTML =
+    "✅ QR FOUND<br>" +
+    "Registration: " + registrationID +
+    "<br>Opening student record...";
+
+  var checkInURL =
+    "https://script.google.com/macros/s/AKfycbysbvpdWgaQbEsWrvIvfQx9gleIth8jh0ORiXVZsBv36SZpAJSqC8Aj3H3Rst63irxV0w/exec?id=" +
+    encodeURIComponent(registrationID);
+
+  window.location.href = checkInURL;
+}
+
   /*
     The QR already contains your Apps Script URL:
 
