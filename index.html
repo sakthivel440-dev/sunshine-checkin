@@ -46,35 +46,59 @@
 
 <script>
 
-function onScanSuccess(decodedText, decodedResult) {
+function onScanSuccess(decodedText) {
 
   console.log("QR FOUND:", decodedText);
 
-  if (decodedText.indexOf("?id=") !== -1) {
+  var id = decodedText.trim();
 
-    var id = decodedText.split("?id=")[1];
+  /*
+   * QR contains:
+   * https://script.google.com/.../exec?id=CANVAS-2026-0001
+   */
 
-    if (id.indexOf("&") !== -1) {
-      id = id.split("&")[0];
-    }
+  if (id.indexOf("?id=") !== -1) {
 
-    window.location.href =
-      "https://script.google.com/macros/s/AKfycbysbvpdWgaQbEsWrvIvfQx9gleIth8jh0ORiXVZsBv36SZpAJSqC8Aj3H3Rst63irxV0w/exec?id=" +
-      encodeURIComponent(id);
-
-  } else {
-
-    window.location.href =
-      "https://script.google.com/macros/s/AKfycbysbvpdWgaQbEsWrvIvfQx9gleIth8jh0ORiXVZsBv36SZpAJSqC8Aj3H3Rst63irxV0w/exec?id=" +
-      encodeURIComponent(decodedText);
+    id = id.split("?id=")[1];
 
   }
 
+  if (id.indexOf("&") !== -1) {
+
+    id = id.split("&")[0];
+
+  }
+
+  try {
+
+    id = decodeURIComponent(id);
+
+  } catch (e) {
+
+  }
+
+  id = id.trim();
+
+  console.log("REGISTRATION ID:", id);
+
+  /*
+   * Open your Google Apps Script check-in page
+   */
+
+  var checkInURL =
+    "https://script.google.com/macros/s/AKfycbysbvpdWgaQbEsWrvIvfQx9gleIth8jh0ORiXVZsBv36SZpAJSqC8Aj3H3Rst63irxV0w/exec?id=" +
+    encodeURIComponent(id);
+
+  window.location.href = checkInURL;
+
 }
 
+
 function onScanFailure(error) {
+
   // Keep scanning
 }
+
 
 var scanner = new Html5QrcodeScanner(
   "reader",
@@ -89,7 +113,11 @@ var scanner = new Html5QrcodeScanner(
   false
 );
 
-scanner.render(onScanSuccess, onScanFailure);
+
+scanner.render(
+  onScanSuccess,
+  onScanFailure
+);
 
 </script>
 
