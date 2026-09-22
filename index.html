@@ -27,6 +27,12 @@
       width: 100%;
       margin-top: 20px;
     }
+
+    #message {
+      margin-top: 15px;
+      font-size: 17px;
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -42,73 +48,167 @@
 
   <div id="reader"></div>
 
+  <div id="message">
+    📷 Camera ready — scan QR
+  </div>
+
 </div>
 
 <script>
 
-function onScanSuccess(decodedText) {
+let scanner = null;
+let alreadyScanned = false;
+
+
+function onScanSuccess(decodedText, decodedResult) {
+
+  // Prevent multiple scans
+  if (alreadyScanned) return;
+
+  alreadyScanned = true;
 
   console.log("QR FOUND:", decodedText);
 
-  var id = decodedText.trim();
+  document.getElementById("message").innerHTML =
+    "✅ QR SCANNED<br>Checking registration...";
+
+  scanner.clear().then(function() {
+
+    openStudent(decodedText);
+
+  }).catch(function() {
+
+    openStudent(decodedText);
+
+  });
+}
+
+
+function openStudent(qrData) {
+
+  qrData = String(qrData).trim();
+
+  console.log("RAW QR:", qrData);
+
+  var registrationID = "";
 
   /*
-   * QR contains:
-   * https://script.google.com/.../exec?id=CANVAS-2026-0001
+   * IMPORTANT:
+   * Find CANVAS registration ID anywhere inside QR.
+   *
+   * Example:
+   * CANVAS-2026-0001
    */
 
-  if (id.indexOf("?id=") !== -1) {
+  var match = qrData.match(/CANVAS-\d{4}-\d+/i);
 
-    id = id.split("?id=")[1];
+  if (match) {
+
+    registrationID = match[0];
+
+  } else {
+
+    /*
+     * If QR contains ?id=...
+     */
+
+    if (qrData.indexOf("?id=") !== -1) {
+
+      registrationID =
+        qrData.split("?id=")[1];
+
+      if (registrationID.indexOf("&") !== -1) {
+
+        registrationID =
+          registrationID.split("&")[0];
+
+      }
+
+    } else {
+
+      // Use QR text directly
+      registrationID = qrData;
+
+    }
 
   }
 
-  if (id.indexOf("&") !== -1) {
-
-    id = id.split("&")[0];
-
-  }
 
   try {
 
-    id = decodeURIComponent(id);
+    registrationID =
+      decodeURIComponent(registrationID);
 
   } catch (e) {
 
   }
 
-  id = id.trim();
 
-  console.log("REGISTRATION ID:", id);
+  registrationID =
+    registrationID.trim();
+
+
+  console.log(
+    "FINAL REGISTRATION ID:",
+    registrationID
+  );
+
+
+  if (!registrationID) {
+
+    document.getElementById("message").innerHTML =
+      "❌ Registration ID not found";
+
+    alreadyScanned = false;
+
+    return;
+  }
+
+
+  document.getElementById("message").innerHTML =
+    "🔍 Checking:<br>" +
+    registrationID;
+
 
   /*
-   * Open your Google Apps Script check-in page
+   * Send ONLY the registration ID
+   * to Google Apps Script.
    */
 
   var checkInURL =
     "https://script.google.com/macros/s/AKfycbysbvpdWgaQbEsWrvIvfQx9gleIth8jh0ORiXVZsBv36SZpAJSqC8Aj3H3Rst63irxV0w/exec?id=" +
-    encodeURIComponent(id);
+    encodeURIComponent(registrationID);
+
 
   window.location.href = checkInURL;
-
 }
 
 
 function onScanFailure(error) {
-
   // Keep scanning
 }
 
 
-var scanner = new Html5QrcodeScanner(
+/*
+ * FAST QR SCANNER
+ */
+
+scanner = new Html5QrcodeScanner(
   "reader",
   {
-    fps: 10,
+    fps: 20,
+
     qrbox: {
-      width: 250,
-      height: 250
+      width: 300,
+      height: 300
     },
-    rememberLastUsedCamera: true
+
+    rememberLastUsedCamera: true,
+
+    showTorchButtonIfSupported: true,
+
+    showZoomSliderIfSupported: true
+
   },
   false
 );
